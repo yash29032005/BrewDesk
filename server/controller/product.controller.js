@@ -1,8 +1,8 @@
-const pool = require("../config/db");
+const sql = require("../config/db");
 
 exports.getProducts = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT*FROM products");
+    const rows = await sql`SELECT * FROM products`;
 
     if (rows.length === 0) {
       return res.status(400).json({ message: "There are no products" });
@@ -25,10 +25,10 @@ exports.editProducts = async (req, res) => {
     }
 
     // Run the update
-    const [result] = await pool.query(
-      "UPDATE products SET name=?, category=?, price=? WHERE id=?",
-      [name, category, price, id]
-    );
+    const result = await sql`
+      UPDATE products SET product_name=${name}, product_category=${category}, product_price=${price} WHERE product_id=${id}
+      returning *
+    `;
 
     // If product doesn't exist
     if (result.affectedRows === 0) {
@@ -42,7 +42,9 @@ exports.editProducts = async (req, res) => {
         .json({ message: "No changes made (values are the same)" });
     }
 
-    res.status(200).json({ message: "Product updated successfully" });
+    res
+      .status(200)
+      .json({ product: result[0], message: "Product updated successfully" });
   } catch (error) {
     console.error("Error in product controller:", error);
     res
@@ -55,19 +57,14 @@ exports.insertProducts = async (req, res) => {
   try {
     const { name, category, price, stock } = req.body;
 
-    const [result] = await pool.query(
-      "INSERT INTO products (name, category,price, stock) VALUES (?, ?, ?, ?)",
-      [name, category, price, stock]
-    );
-
-    // Get the inserted product using the insertId
-    const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [
-      result.insertId,
-    ]);
+    const rows = await sql`
+      INSERT INTO products (product_name, product_category, product_price, product_stock)
+      VALUES (${name}, ${category}, ${price}, ${stock})
+      RETURNING *
+    `;
 
     res.status(200).json({
       message: "Product inserted successfully",
-
       product: rows[0],
     });
   } catch (error) {
@@ -80,10 +77,10 @@ exports.insertProducts = async (req, res) => {
 
 exports.getProductSummary = async (req, res) => {
   try {
-    const [totalProducts] = await pool.query(`
-      SELECT COUNT(id) AS total 
+    const totalProducts = await sql`
+      SELECT COUNT(product_id) AS total
       FROM products
-    `);
+    `;
 
     res.status(200).json({
       total: totalProducts[0].total,
@@ -99,10 +96,7 @@ exports.togicLogic = async (req, res) => {
     const { id } = req.params;
     const { enabled } = req.body;
 
-    await pool.query("UPDATE products SET enabled = ? WHERE id = ?", [
-      enabled,
-      id,
-    ]);
+    await sql`UPDATE products SET product_enabled = ${enabled} WHERE product_id = ${id}`;
 
     res.status(200).json({ enabled });
   } catch (error) {

@@ -3,7 +3,7 @@ exports.authorizeRoles = (...allowedRoles) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.emp_role)) {
       return res.status(403).json({ message: "Access denied" });
     }
     next();

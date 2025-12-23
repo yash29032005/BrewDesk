@@ -97,7 +97,7 @@ const PaymentModal = ({ onClose, cart, setCart }) => {
       return;
     }
 
-    if (paymentMethod === "Cash") {
+    if (paymentMethod === "cash") {
       placeOrder();
     } else {
       handleOnlinePayment();
@@ -156,8 +156,8 @@ const PaymentModal = ({ onClose, cart, setCart }) => {
             text-black dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           >
             <option value="">-- Select a Payment Method --</option>
-            <option value="Cash">Cash</option>
-            <option value="Online">Card/UPI (Online)</option>
+            <option value="cash">Cash</option>
+            <option value="online">Card/UPI (Online)</option>
           </select>
         </div>
 

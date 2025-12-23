@@ -27,9 +27,9 @@ export const ProductProvider = ({ children }) => {
     };
 
     if (
-      user?.role === "manager" ||
-      user?.role === "admin" ||
-      user?.role === "employee"
+      user?.emp_role === "manager" ||
+      user?.emp_role === "admin" ||
+      user?.emp_role === "employee"
     ) {
       fetchProducts();
     }
@@ -48,7 +48,7 @@ export const ProductProvider = ({ children }) => {
       }
     };
 
-    if (user?.role === "manager" || user?.role === "admin") {
+    if (user?.emp_role === "manager" || user?.emp_role === "admin") {
       fetchProductSummary();
     }
   }, []);

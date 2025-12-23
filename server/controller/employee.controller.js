@@ -1,18 +1,16 @@
 // controllers/userController.js
-const pool = require("../config/db");
+const sql = require("../config/db");
 
 // GET /employee/all
 exports.getAllEmployees = async (req, res) => {
   try {
-    const [employees] = await pool.query(
-      "SELECT id, name, email, role,salary FROM employees WHERE role=?",
-      ["employee"]
-    );
+    const employees = await sql`
+      SELECT emp_id, emp_name, emp_email, emp_role, emp_salary FROM employees WHERE emp_role = 'employee'
+    `;
 
-    const [employeesandmanagers] = await pool.query(
-      "SELECT id, name, email, role,salary FROM employees WHERE role!=?",
-      ["admin"]
-    );
+    const employeesandmanagers = await sql`
+      SELECT emp_id, emp_name, emp_email, emp_role, emp_salary FROM employees WHERE emp_role != 'admin'
+    `;
 
     res.status(200).json({ employees, employeesandmanagers });
   } catch (err) {
@@ -33,10 +31,12 @@ exports.editEmployee = async (req, res) => {
     }
 
     // Run the update
-    const [result] = await pool.query(
-      "UPDATE employees SET name=?, salary=?, role=? WHERE id=?",
-      [name, salary, role, id]
-    );
+    const result = await sql`
+      UPDATE employees
+      SET emp_name = ${name}, emp_salary = ${salary}, emp_role = ${role}
+      WHERE emp_id = ${id}
+      returning *
+    `;
 
     // If product doesn't exist
     if (result.affectedRows === 0) {
@@ -45,12 +45,15 @@ exports.editEmployee = async (req, res) => {
 
     // If values are the same → no changes
     if (result.changedRows === 0) {
-      return res
-        .status(400)
-        .json({ message: "No changes made (values are the same)" });
+      return res.status(400).json({
+        message: "No changes made (values are the same)",
+      });
     }
 
-    res.status(200).json({ message: "Employee updated successfully" });
+    res.status(200).json({
+      employee: result[0],
+      message: "Employee updated successfully",
+    });
   } catch (error) {
     console.error("Error in employee controller:", error);
     res
@@ -63,9 +66,9 @@ exports.deleteEmployee = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [result] = await pool.query("DELETE FROM employees WHERE id = ?", [
-      id,
-    ]);
+    const result = await sql`
+      DELETE FROM employees WHERE emp_id = ${id}
+    `;
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Employee not found" });
@@ -82,22 +85,21 @@ exports.deleteEmployee = async (req, res) => {
 
 exports.getEmployeeSummary = async (req, res) => {
   try {
-    const [totalEmployees] = await pool.query(`
-      SELECT COUNT(id) AS total 
+    const totalEmployees = await sql`
+      SELECT COUNT(emp_id) AS total 
       FROM employees
-      WHERE role="employee"
-    `);
-    const [totalManagers] = await pool.query(`
-      SELECT COUNT(id) AS total 
+      WHERE emp_role = ${"employee"}
+    `;
+    const totalManagers = await sql`
+      SELECT COUNT(emp_id) AS total 
       FROM employees
-      WHERE role="manager"
-    `);
-    const [totalAdmin] = await pool.query(`
-      SELECT COUNT(id) AS total 
+      WHERE emp_role = ${"manager"}
+    `;
+    const totalAdmin = await sql`
+      SELECT COUNT(emp_id) AS total 
       FROM employees
-      WHERE role="admin"
-    `);
-
+      WHERE emp_role = ${"admin"}
+    `;
     res.status(200).json({
       totalEmployees: totalEmployees[0].total,
       totalManagers: totalManagers[0].total,

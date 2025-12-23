@@ -1,48 +1,67 @@
-const pool = require("../config/db");
 const Razorpay = require("razorpay");
+const sql = require("../config/db");
 
 exports.createOrder = async (req, res) => {
+  const client = sql;
   try {
     const { userId, customerName, cart, paymentMethod } = req.body;
 
-    // calculate total
-    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    if (!cart || cart.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
 
-    // insert into orders
-    const [orderResult] = await pool.query(
-      "INSERT INTO orders (user_id, customer_name, total, payment_method) VALUES (?, ?, ?, ?)",
-      [userId, customerName, total, paymentMethod]
+    const normalizedPaymentMethod = paymentMethod?.toUpperCase();
+
+    const total = cart.reduce(
+      (sum, item) => sum + Number(item.price) * Number(item.qty),
+      0
     );
-    const orderId = orderResult.insertId;
 
-    // insert items + reduce stock
+    await client`BEGIN`;
+
+    const orderResult = await client`
+      INSERT INTO orders (user_id, customer_name, total, payment_method)
+      VALUES (${userId}, ${customerName}, ${total}, ${normalizedPaymentMethod})
+      RETURNING id
+    `;
+
+    const orderId = orderResult[0].id;
+
     for (const item of cart) {
-      const [[product]] = await pool.query(
-        "SELECT stock FROM products WHERE id = ?",
-        [item.id]
-      );
-      if (!product || product.stock < item.qty) {
+      const productResult = await client`
+        SELECT stock
+        FROM products
+        WHERE id = ${item.id}
+        FOR UPDATE
+      `;
+
+      if (productResult.length === 0 || productResult[0].stock < item.qty) {
+        await client`ROLLBACK`;
         return res.status(400).json({
           message: `Not enough stock for ${item.name}`,
         });
       }
 
-      await pool.query(
-        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
-        [orderId, item.id, item.qty, item.price]
-      );
+      await client`
+        INSERT INTO order_items (order_id, product_id, quantity, price)
+        VALUES (${orderId}, ${item.id}, ${item.qty}, ${item.price})
+      `;
 
-      await pool.query("UPDATE products SET stock = stock - ? WHERE id = ?", [
-        item.qty,
-        item.id,
-      ]);
+      await client`
+        UPDATE products
+        SET stock = stock - ${item.qty}
+        WHERE id = ${item.id}
+      `;
     }
+
+    await client`COMMIT`;
 
     res.status(201).json({
       orderId,
       message: "Order placed successfully",
     });
   } catch (error) {
+    await sql`ROLLBACK`;
     console.error("Error in orders controller:", error);
     res
       .status(500)
@@ -54,26 +73,24 @@ exports.getOrder = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [rows] = await pool.query(
-      `SELECT 
-          o.id AS orderId,
-          o.user_id,
-          o.customer_name,
-          o.total,
-          o.created_at,
-          oi.product_id,
-          p.name AS productName,
-          oi.quantity,
-          oi.price
-       FROM orders o
-       JOIN order_items oi ON o.id = oi.order_id
-       JOIN products p ON oi.product_id = p.id
-       WHERE o.user_id = ?
-       ORDER BY o.created_at DESC, oi.id ASC`,
-      [userId]
-    );
+    const rows = await sql`
+      SELECT 
+        o.id AS orderId,
+        o.user_id,
+        o.customer_name,
+        o.total,
+        o.created_at,
+        oi.product_id,
+        p.name AS productName,
+        oi.quantity,
+        oi.price
+      FROM orders o
+      JOIN order_items oi ON o.id = oi.order_id
+      JOIN products p ON oi.product_id = p.id
+      WHERE o.user_id = ${userId}
+      ORDER BY o.created_at DESC, oi.id ASC
+    `;
 
-    // group orders with items
     const ordersMap = {};
     rows.forEach((row) => {
       if (!ordersMap[row.orderId]) {
@@ -94,7 +111,6 @@ exports.getOrder = async (req, res) => {
       });
     });
 
-    // sort orders by createdAt (most recent first)
     const orders = Object.values(ordersMap).sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
@@ -102,54 +118,55 @@ exports.getOrder = async (req, res) => {
     res.status(200).json({ orders });
   } catch (error) {
     console.error("Error in orders controller:", error);
-    res.status(500);
+    res.status(500).json({ message: "Failed to fetch orders" });
   }
 };
-
 exports.getAllOrders = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT 
-          o.id AS orderId,
-          o.user_id,
-          u.name AS userName,
-          o.customer_name,
-          o.total,
-          o.created_at,
-          oi.product_id,
-          p.name AS productName,
-          oi.quantity,
-          oi.price
-       FROM orders o
-       JOIN order_items oi ON o.id = oi.order_id
-       JOIN products p ON oi.product_id = p.id
-       LEFT JOIN employees u ON o.user_id = u.id
-       ORDER BY o.created_at DESC, oi.id ASC`
-    );
+    const rows = await sql`
+        SELECT 
+  o.id AS orderId,
+  o.user_id AS userId,
+  u.name AS userName,
+  o.customer_name AS customerName,
+  o.total,
+  o.payment_method AS paymentMethod,
+  o.created_at AS createdAt,
+  oi.product_id AS productId,
+  p.name AS productName,
+  oi.quantity,
+  oi.price
+FROM orders o
+JOIN order_items oi ON o.id = oi.order_id
+JOIN products p ON oi.product_id = p.id
+LEFT JOIN employees u ON o.user_id = u.id
+ORDER BY o.created_at DESC, oi.id ASC
 
-    // group orders with their items
+    `;
+
     const ordersMap = {};
     rows.forEach((row) => {
       if (!ordersMap[row.orderId]) {
         ordersMap[row.orderId] = {
           orderId: row.orderId,
-          userId: row.user_id,
+          userId: row.userId,
           userName: row.userName,
-          customerName: row.customer_name,
+          customerName: row.customerName,
           total: row.total,
-          createdAt: row.created_at,
+          paymentMethod: row.paymentMethod,
+          createdAt: row.createdAt,
           items: [],
         };
       }
+
       ordersMap[row.orderId].items.push({
-        productId: row.product_id,
+        productId: row.productId,
         name: row.productName,
         quantity: row.quantity,
         price: row.price,
       });
     });
 
-    // sort by most recent first
     const orders = Object.values(ordersMap).sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
@@ -157,29 +174,27 @@ exports.getAllOrders = async (req, res) => {
     res.status(200).json({ orders });
   } catch (error) {
     console.error("Error fetching all orders:", error);
-    res.status(500);
+    res.status(500).json({ message: "Failed to fetch all orders" });
   }
 };
 
 exports.getOrdersSummary = async (req, res) => {
   try {
-    // Query 1: total orders grouped by user
-    const [ordersByUser] = await pool.query(`
-      SELECT user_id, COUNT(id) AS total 
-      FROM orders 
+    const ordersByUser = await sql`
+      SELECT user_id, COUNT(id) AS total
+      FROM orders
       GROUP BY user_id
-    `);
+    `;
 
-    // Query 2: total orders overall
-    const [totalOrders] = await pool.query(`
-      SELECT COUNT(id) AS total 
+    const totalOrders = await sql`
+      SELECT COUNT(id) AS total
       FROM orders
-    `);
+    `;
 
-    const [totalRevenue] = await pool.query(`
-      SELECT SUM(total) AS total 
+    const totalRevenue = await sql`
+      SELECT SUM(total) AS total
       FROM orders
-    `);
+    `;
 
     res.status(200).json({
       orders: ordersByUser,
@@ -188,7 +203,7 @@ exports.getOrdersSummary = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500);
+    res.status(500).json({ message: "Failed to fetch orders summary" });
   }
 };
 
@@ -200,7 +215,7 @@ const razorpay = new Razorpay({
 exports.makePayment = async (req, res) => {
   try {
     const options = {
-      amount: req.body.amount * 100, // amount in paise
+      amount: Number(req.body.amount) * 100,
       currency: "INR",
       receipt: `order_rcptid_${Date.now()}`,
     };

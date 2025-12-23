@@ -5,12 +5,12 @@ import { toast } from "react-toastify";
 import { UserContext } from "../../context/UserContext";
 
 const RemoveEmployeeModal = ({ onClose, emp }) => {
-  const { setEmployees } = useContext(UserContext);
+  const { setEmployeesandmanagers } = useContext(UserContext);
 
   const handleRemove = async () => {
     try {
       const result = await axios.delete(
-        `${import.meta.env.VITE_API_URL}/api/employee/${emp.id}`,
+        `${import.meta.env.VITE_API_URL}/api/employee/${emp.emp_id}`,
         {
           withCredentials: true,
         }
@@ -18,8 +18,8 @@ const RemoveEmployeeModal = ({ onClose, emp }) => {
       toast.success(result.data.message);
 
       // remove deleted employee from state
-      setEmployees((prevEmployees) =>
-        prevEmployees.filter((e) => e.id !== emp.id)
+      setEmployeesandmanagers((prevEmployees) =>
+        prevEmployees.filter((e) => e.emp_id !== emp.emp_id)
       );
 
       onClose();

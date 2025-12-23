@@ -26,8 +26,8 @@ const AdminDashboard = () => {
     useContext(OrderContext);
 
   const employeeOrdersData = employees.map((emp) => ({
-    name: emp.name,
-    value: ordersMap[emp.id] ?? 0,
+    name: emp.emp_name,
+    value: ordersMap[emp.emp_id] ?? 0,
   }));
 
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff6f61", "#00c49f"];

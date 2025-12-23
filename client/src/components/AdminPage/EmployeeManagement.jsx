@@ -31,9 +31,9 @@ const EmployeeManagement = () => {
             </p>
           </div>
           <div className="flex flex-col gap-3">
-            {employeesandmanagers.map((emp) => (
+            {employeesandmanagers.map((emp, index) => (
               <div
-                key={emp.id}
+                key={index}
                 className="bg-gradient-to-b from-lightternary to-lightprimary 
                 dark:from-darkternary dark:to-darkprimary text-white px-5 py-3 
                 rounded-lg shadow-md flex flex-row items-center justify-between"
@@ -45,19 +45,19 @@ const EmployeeManagement = () => {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-md text-black dark:text-white">
-                    {emp.name}
+                    {emp.emp_name}
                   </p>
                   <p className="text-xs opacity-80 text-lightgrey dark:text-darkgrey -mt-1">
-                    {emp.role}
+                    {emp.emp_role}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-black dark:text-white">
-                    ₹{emp.salary}
+                    ₹{emp.emp_salary}
                   </p>
                 </div>
-                {emp.role === "employee" ? (
+                {emp.emp_role === "employee" ? (
                   <div className="me-3">
                     <span className="text-xs px-2 py-1 rounded-full bg-lightsecondary dark:bg-darkprimary text-black dark:text-white">
-                      {ordersMap[emp.id] ?? 0} orders
+                      {ordersMap[emp.emp_id] ?? 0} orders
                     </span>
                   </div>
                 ) : null}

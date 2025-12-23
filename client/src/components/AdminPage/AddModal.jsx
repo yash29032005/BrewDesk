@@ -4,8 +4,7 @@ import { toast } from "react-toastify";
 import { ProductContext } from "../../context/ProductContext";
 
 const AddModal = ({ onClose, product }) => {
-  const product_id = product.id;
-  const product_quantity = product.stock;
+  const product_id = product.product_id;
   const [quantity, setQuantity] = useState(0);
   const { setProducts } = useContext(ProductContext);
 
@@ -20,10 +19,11 @@ const AddModal = ({ onClose, product }) => {
       );
       setQuantity(0);
       onClose();
+      const updatedProduct = result.data.product;
       toast.success(result.data.message);
       setProducts((prevProducts) =>
         prevProducts.map((p) =>
-          p.id === product.id ? { ...p, stock: p.stock + Number(quantity) } : p
+          p.product_id === product_id ? updatedProduct : p
         )
       );
     } catch (err) {
@@ -68,13 +68,13 @@ const AddModal = ({ onClose, product }) => {
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary 
                text-black dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
             >
-              {product.name}
+              {product.product_name}
             </p>
           </div>
 
           <div className="mt-5 text-lightgrey dark:text-darkgrey flex flex-col">
             <label htmlFor="salary" className="text-sm ms-1 font-bold">
-              Product Quantity: {product_quantity}
+              Product Quantity: {product.product_stock}
             </label>
             <input
               id="salary"

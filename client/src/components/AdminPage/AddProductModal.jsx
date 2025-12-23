@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 
 const AddProductModal = ({ onClose, setProducts }) => {
-  const [name, setName] = useState(null);
-  const [category, setCategory] = useState(null);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
   const [price, setPrice] = useState(null);
   const [stock, setStock] = useState(null);
 
@@ -22,10 +22,11 @@ const AddProductModal = ({ onClose, setProducts }) => {
       );
       setName("");
       setCategory("");
-      setPrice("");
-      setStock("");
+      setPrice(0);
+      setStock(0);
       onClose();
       toast.success(result.data.message);
+      console.log(result);
 
       setProducts((prev) => [...prev, result.data.product]);
     } catch (error) {
@@ -53,7 +54,10 @@ const AddProductModal = ({ onClose, setProducts }) => {
                 Add Product
               </h2>
             </div>
-            <button className="text-gray-400 hover:text-white transition duration-200 text-lg">
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition duration-200 text-lg"
+            >
               ✕
             </button>
           </div>

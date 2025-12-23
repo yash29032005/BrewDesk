@@ -100,6 +100,7 @@ const OrderHistoryPage = () => {
       </div>
     );
   }
+  console.log(orders);
 
   return (
     <div
@@ -118,10 +119,10 @@ const OrderHistoryPage = () => {
           <p className="text-gray-500">No orders found</p>
         ) : (
           <div className="flex flex-col gap-5">
-            {orders.map((order) => {
+            {orders.map((order, index) => {
               return (
                 <div
-                  key={order.orderId}
+                  key={index}
                   className="rounded-lg p-4 bg-gradient-to-b from-lightternary to-lightprimary
                    dark:bg-gradient-to-b dark:from-darkternary dark:to-darkprimary shadow-md relative"
                 >
@@ -129,7 +130,7 @@ const OrderHistoryPage = () => {
                   <div className="flex justify-between items-center mb-3 ">
                     <div>
                       <p className="text-sm text-lightgrey dark:text-darkgrey">
-                        <span className="font-bold">#{order.orderId}</span> |{" "}
+                        <span className="font-bold">#{index + 1}</span> |{" "}
                         {new Date(order.createdAt).toLocaleString()}
                       </p>
                       <p className="text-sm text-black dark:text-white mt-1">

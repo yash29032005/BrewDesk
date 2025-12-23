@@ -127,7 +127,7 @@ const NavBar = () => {
               className="px-4 py-2 rounded-md hover:opacity-90 transition text-black
         dark:text-white bg-lightsecondary dark:bg-darksecondary"
             >
-              <span className="font-bold">{user.name}</span>
+              <span className="font-bold">{user.emp_name}</span>
               <span className="text-lg">⌄</span>
             </button>
 

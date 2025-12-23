@@ -1,10 +1,10 @@
-const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const {
   validateRegister,
   validateLogin,
 } = require("../validation/auth.validation");
 const { generateCookie } = require("../middleware/generateCookie");
+const sql = require("../config/db");
 
 exports.login = async (req, res) => {
   try {
@@ -14,16 +14,18 @@ exports.login = async (req, res) => {
 
     const { email, password } = req.body;
 
-    const [rows] = await pool.query("SELECT * FROM employees WHERE email = ?", [
-      email,
-    ]);
+    const rows = await sql`
+      SELECT *
+      FROM employees
+      WHERE emp_email = ${email}
+    `;
+
     if (rows.length === 0) {
       return res.status(400).json({ message: "User does not exist" });
     }
-
     const existingUser = rows[0];
 
-    const isMatch = await bcrypt.compare(password, existingUser.password);
+    const isMatch = await bcrypt.compare(password, existingUser.emp_password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -59,34 +61,39 @@ exports.me = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const { error } = validateRegister(req.body);
-    if (error)
+    if (error) {
       return res.status(400).json({ message: error.details[0].message });
+    }
 
     const { name, email, password } = req.body;
 
-    const [existingUser] = await pool.query(
-      "SELECT * FROM employees WHERE email=?",
-      [email]
-    );
-    if (existingUser.length > 0) {
-      return res.status(400).json({ message: "User already exists" });
+    // 1️⃣ Check if user already exists
+    const existingUsers = await sql`
+      SELECT * FROM employees WHERE emp_email = ${email}
+    `;
+
+    // 2️⃣ If user exists → login
+    if (existingUsers.length > 0) {
+      const existingUser = existingUsers[0];
+
+      generateCookie(res, existingUser);
+
+      return res.status(200).json({
+        user: existingUser,
+        message: "User already exists, logged in successfully",
+      });
     }
 
+    // 3️⃣ If user does NOT exist → create user
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const [result] = await pool.query(
-      "INSERT INTO employees(name,email,password) VALUES (?,?,?)",
-      [name, email, hashedPassword]
-    );
+    const insertedUsers = await sql`
+      INSERT INTO employees (emp_name, emp_email, emp_password)
+      VALUES (${name}, ${email}, ${hashedPassword})
+      RETURNING *
+    `;
 
-    const [rows] = await pool.query("SELECT * FROM employees WHERE email = ?", [
-      email,
-    ]);
-    if (rows.length === 0) {
-      return res.status(400).json({ message: "User does not exist" });
-    }
-
-    const newuser = rows[0];
+    const newuser = insertedUsers[0];
 
     generateCookie(res, newuser);
 

@@ -27,11 +27,11 @@ export const UserProvider = ({ children }) => {
         const fetchedUser = result.data.user;
         setUser(fetchedUser);
         if (fetchedUser) {
-          if (fetchedUser.role === "employee") {
+          if (fetchedUser.emp_role === "employee") {
             navigate("/employee");
-          } else if (fetchedUser.role === "manager") {
+          } else if (fetchedUser.emp_role === "manager") {
             navigate("/manager");
-          } else if (fetchedUser.role === "admin") {
+          } else if (fetchedUser.emp_role === "admin") {
             navigate("/admin");
           }
         } else {
@@ -66,10 +66,10 @@ export const UserProvider = ({ children }) => {
       }
     };
 
-    if (user?.role === "manager" || user?.role === "admin") {
+    if (user?.emp_role === "manager" || user?.emp_role === "admin") {
       fetchAllEmployee();
     }
-  }, [user?.role]);
+  }, [user?.emp_role]);
 
   useEffect(() => {
     const fetchEmployeeSummary = async () => {
@@ -86,10 +86,10 @@ export const UserProvider = ({ children }) => {
       }
     };
 
-    if (user?.role === "manager" || user?.role === "admin") {
+    if (user?.emp_role === "manager" || user?.emp_role === "admin") {
       fetchEmployeeSummary();
     }
-  }, [user?.role]);
+  }, [user?.emp_role]);
 
   return (
     <UserContext.Provider
@@ -98,6 +98,7 @@ export const UserProvider = ({ children }) => {
         setUser,
         employees,
         employeesandmanagers,
+        setEmployeesandmanagers,
         totalEmployees,
         totalManagers,
         totalAdmin,

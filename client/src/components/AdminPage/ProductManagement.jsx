@@ -4,8 +4,6 @@ import axios from "axios";
 import { CiShoppingCart } from "react-icons/ci";
 import { BsCup } from "react-icons/bs";
 import { FaPlus } from "react-icons/fa6";
-import { FaMinus } from "react-icons/fa";
-import RemoveProductModal from "../RemoveProductModal";
 import AddProductModal from "../AdminPage/AddProductModal";
 import EditProductModal from "../EditProductModal";
 import { ProductContext } from "../../context/ProductContext";
@@ -18,12 +16,14 @@ const ProductManagement = () => {
 
   // Function to toggle enable/disable
   const toggleProductStatus = async (item) => {
-    const updatedStatus = !item.enabled;
+    const updatedStatus = !item.product_enabled;
 
     // Optimistic UI update
     setProducts((prev) =>
       prev.map((prod) =>
-        prod.id === item.id ? { ...prod, enabled: updatedStatus } : prod
+        prod.product_id === item.product_id
+          ? { ...prod, product_enabled: updatedStatus }
+          : prod
       )
     );
 
@@ -42,7 +42,9 @@ const ProductManagement = () => {
       // Revert UI if request fails
       setProducts((prev) =>
         prev.map((prod) =>
-          prod.id === item.id ? { ...prod, enabled: item.enabled } : prod
+          prod.product_id === item.product_id
+            ? { ...prod, product_enabled: item.product_enabled }
+            : prod
         )
       );
     }
@@ -76,11 +78,11 @@ const ProductManagement = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((item) => (
+          {products.map((item, index) => (
             <div
-              key={item.id}
+              key={index}
               className={`bg-gradient-to-b from-lightternary to-lightprimary dark:bg-gradient-to-b dark:from-darkternary dark:to-darkprimary text-white p-5 rounded-lg shadow-md flex flex-col justify-between min-h-[200px] md:min-h-[300px] transition relative ${
-                !item.enabled ? "opacity-50" : ""
+                !item?.product_enabled ? "opacity-50" : ""
               }`}
             >
               <div className="flex-1 flex flex-col items-center justify-center">
@@ -90,31 +92,31 @@ const ProductManagement = () => {
               </div>
               <div className="mt-3">
                 <p className="font-bold text-lg text-black dark:text-white">
-                  {item.name}
+                  {item?.product_name}
                 </p>
                 <p className="text-sm opacity-80 text-lightgrey dark:text-darkgrey">
-                  {item.category}
+                  {item?.product_category}
                 </p>
                 <p className="mt-1 font-semibold text-black dark:text-white">
-                  ₹{item.price}
+                  ₹{item?.product_price}
                 </p>
                 <span
                   className="absolute bottom-5 right-5 text-xs bg-lightprimary dark:bg-darkprimary 
             text-black dark:text-white rounded-full px-3 py-1"
                 >
-                  Stock: {item.stock}
+                  Stock: {item?.product_stock}
                 </span>
 
                 {/* Enable/Disable Button */}
                 <span
                   onClick={() => toggleProductStatus(item)}
                   className={`absolute top-5 right-5 text-xs rounded-md px-3 py-1 cursor-pointer ${
-                    item.enabled
+                    item?.product_enabled
                       ? "bg-green-500 text-white"
                       : "bg-red-500 text-white"
                   } hover:opacity-80 transition`}
                 >
-                  {item.enabled ? "Enabled" : "Disabled"}
+                  {item?.product_enabled ? "Enabled" : "Disabled"}
                 </span>
 
                 {/* Edit Button */}

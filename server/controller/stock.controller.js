@@ -1,13 +1,15 @@
-const pool = require("../config/db");
+const sql = require("../config/db");
 
 // POST /api/stock/request
 exports.createRequest = async (req, res) => {
   try {
     const { productId, employeeId, quantity } = req.body;
-    await pool.query(
-      "INSERT INTO stock_requests (product_id, employee_id, quantity) VALUES (?, ?, ?)",
-      [productId, employeeId, quantity]
-    );
+
+    await sql`
+      INSERT INTO stock_requests (product_id, employee_id, quantity)
+      VALUES (${productId}, ${employeeId}, ${quantity})
+    `;
+
     res.json({ message: "Request sent successfully!" });
   } catch (err) {
     console.error("Error in stock controller:", err);
@@ -20,19 +22,22 @@ exports.createRequest = async (req, res) => {
 // GET /api/stock/request
 exports.getAllRequests = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT sr.id, sr.quantity, sr.status, 
-              p.name AS product_name, 
-              e.name AS employee_name
-       FROM stock_requests sr
-       LEFT JOIN products p ON sr.product_id = p.id
-       LEFT JOIN employees e ON sr.employee_id = e.id
-       ORDER BY sr.created_at DESC`
-    );
+    const rows = await sql`
+      SELECT sr.id,
+             sr.quantity,
+             sr.status,
+             p.name AS product_name,
+             e.name AS employee_name
+      FROM stock_requests sr
+      LEFT JOIN products p ON sr.product_id = p.id
+      LEFT JOIN employees e ON sr.employee_id = e.id
+      ORDER BY sr.created_at DESC
+    `;
+
     res.json({ rows });
   } catch (err) {
     console.error("Error in stock controller:", err);
-    res.status(500);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -41,12 +46,13 @@ exports.approveRequest = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find the request details
-    const [[request]] = await pool.query(
-      `SELECT sr.id, sr.product_id, sr.quantity, sr.status 
-       FROM stock_requests sr WHERE sr.id = ?`,
-      [id]
-    );
+    const requestRows = await sql`
+      SELECT id, product_id, quantity, status
+      FROM stock_requests
+      WHERE id = ${id}
+    `;
+
+    const request = requestRows[0];
 
     if (!request) {
       return res.status(404).json({ message: "Request not found" });
@@ -56,17 +62,17 @@ exports.approveRequest = async (req, res) => {
       return res.status(400).json({ message: "Request already processed" });
     }
 
-    // Update request status
-    await pool.query(
-      "UPDATE stock_requests SET status = 'approved' WHERE id = ?",
-      [id]
-    );
+    await sql`
+      UPDATE stock_requests
+      SET status = 'approved'
+      WHERE id = ${id}
+    `;
 
-    // Update product stock
-    await pool.query("UPDATE products SET stock = stock + ? WHERE id = ?", [
-      Number(request.quantity),
-      request.product_id,
-    ]);
+    await sql`
+      UPDATE products
+      SET stock = stock + ${Number(request.quantity)}
+      WHERE id = ${request.product_id}
+    `;
 
     res.json({
       product_id: request.product_id,
@@ -85,10 +91,11 @@ exports.rejectRequest = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await pool.query(
-      "UPDATE stock_requests SET status = 'rejected' WHERE id = ?",
-      [id]
-    );
+    await sql`
+      UPDATE stock_requests
+      SET status = 'rejected'
+      WHERE id = ${id}
+    `;
 
     res.json({ status: "rejected", message: "Request rejected" });
   } catch (err) {
@@ -104,11 +111,15 @@ exports.addStock = async (req, res) => {
   try {
     const { id } = req.params;
     const { quantity } = req.body;
-    await pool.query("UPDATE products SET stock = stock + ? WHERE id = ?", [
-      quantity,
-      id,
-    ]);
-    res.json({ message: "Stock added successfully" });
+
+    const rows = await sql`
+      UPDATE products
+      SET product_stock = product_stock + ${quantity}
+      WHERE product_id = ${id}
+      returning *
+    `;
+
+    res.json({ product: rows[0], message: "Stock added successfully" });
   } catch (err) {
     console.error("Error in stock controller:", err);
     res

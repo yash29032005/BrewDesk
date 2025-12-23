@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const pool = require("../config/db");
+const sql = require("../config/db");
 
 exports.protect = async (req, res, next) => {
   try {
@@ -12,10 +12,8 @@ exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Fetch user from DB
-    const [rows] = await pool.query(
-      "SELECT id, name, email, role FROM employees WHERE id=?",
-      [decoded.id]
-    );
+    const rows = await sql`
+      SELECT emp_id, emp_name, emp_email, emp_role FROM employees WHERE emp_id=${decoded.id}`;
 
     if (rows.length === 0) {
       return res.status(401).json({ message: "User not found" });

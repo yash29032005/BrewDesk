@@ -31,13 +31,10 @@ const RegisterModal = ({ onClose, openLogin }) => {
       toast.success(result.data.message);
       onClose();
 
-      if (loggedInUser.role === "employee") {
-        navigate("/employee");
-      } else if (loggedInUser.role === "manager") {
-        navigate("/manager");
-      } else if (loggedInUser.role === "admin") {
-        navigate("/admin");
-      }
+      // Navigate based on role
+      if (loggedInUser.role === "employee") navigate("/employee");
+      else if (loggedInUser.role === "manager") navigate("/manager");
+      else if (loggedInUser.role === "admin") navigate("/admin");
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Something went wrong");
@@ -83,7 +80,7 @@ const RegisterModal = ({ onClose, openLogin }) => {
               onChange={(e) => {
                 setName(e.target.value);
               }}
-              placeholder="Enter file name"
+              placeholder="Enter name"
               required
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary text-black dark:text-white text-sm"
             />
@@ -99,7 +96,7 @@ const RegisterModal = ({ onClose, openLogin }) => {
               onChange={(e) => {
                 setEmail(e.target.value);
               }}
-              placeholder="Enter file name"
+              placeholder="Enter email"
               required
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary text-black dark:text-white text-sm"
             />
@@ -115,7 +112,7 @@ const RegisterModal = ({ onClose, openLogin }) => {
               onChange={(e) => {
                 setPassword(e.target.value);
               }}
-              placeholder="Enter file name"
+              placeholder="Enter password"
               required
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary text-black dark:text-white text-sm"
             />

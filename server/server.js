@@ -1,8 +1,10 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
-const allRoutes = require("./route");
 const cookieParser = require("cookie-parser");
+const allRoutes = require("./route");
+const sql = require("./config/db");
 
 const app = express();
 
@@ -17,13 +19,25 @@ app.use(
   })
 );
 
+// Health check
 app.get("/", (req, res) => {
   res.send("API is running");
+});
+
+// ✅ Test Neon connection
+app.get("/db-test", async (req, res) => {
+  try {
+    const result = await sql`SELECT version()`;
+    res.json({ postgres: result[0].version });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database connection failed" });
+  }
 });
 
 app.use("/api", allRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });

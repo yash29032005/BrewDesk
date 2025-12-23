@@ -43,7 +43,7 @@ const StockRequest = () => {
         <div className="flex flex-col gap-3">
           {products.map((pro) => (
             <div
-              key={pro.id}
+              key={pro.product_id}
               className="bg-gradient-to-b from-lightternary to-lightprimary 
                 dark:from-darkternary dark:to-darkprimary text-white px-5 py-3 
                 rounded-lg shadow-md flex flex-row items-center justify-between"
@@ -58,10 +58,10 @@ const StockRequest = () => {
               {/* Request details */}
               <div className="flex-1">
                 <p className="font-bold text-md text-black dark:text-white">
-                  {pro.name}
+                  {pro.product_name}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-lightgrey dark:text-darkgrey">
-                  Stock: {pro.stock}
+                  Stock: {pro.product_stock}
                 </p>
               </div>
 

@@ -6,11 +6,11 @@ import { toast } from "react-toastify";
 import { UserContext } from "../../context/UserContext";
 
 const EditEmployeeModal = ({ onClose, emp }) => {
-  const { setEmployees } = useContext(UserContext);
-  const id = emp.id;
-  const [name, setName] = useState(emp.name);
-  const [salary, setSalary] = useState(emp.salary);
-  const [role, setRole] = useState(emp.role);
+  const { setEmployeesandmanagers } = useContext(UserContext);
+  const id = emp.emp_id;
+  const [name, setName] = useState(emp.emp_name);
+  const [salary, setSalary] = useState(emp.emp_salary);
+  const [role, setRole] = useState(emp.emp_role);
 
   const handleEdit = async () => {
     try {
@@ -21,20 +21,19 @@ const EditEmployeeModal = ({ onClose, emp }) => {
           salary,
           role,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
-      setName("");
-      setSalary("");
-      setRole("");
+
       toast.success(result.data.message);
 
-      setEmployees((prevEmployees) =>
-        prevEmployees.map((e) =>
-          e.id === id ? { ...e, name, salary, role } : e
+      const updatedEmployee = result.data.employee;
+
+      setEmployeesandmanagers((prev) =>
+        prev.map((e) =>
+          e.emp_id === updatedEmployee.emp_id ? updatedEmployee : e
         )
       );
+
       onClose();
     } catch (error) {
       console.error(error);
@@ -61,7 +60,10 @@ const EditEmployeeModal = ({ onClose, emp }) => {
                 Edit Employee Details
               </h2>
             </div>
-            <button className="text-gray-400 hover:text-white transition duration-200 text-lg">
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition duration-200 text-lg"
+            >
               ✕
             </button>
           </div>
@@ -76,7 +78,7 @@ const EditEmployeeModal = ({ onClose, emp }) => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter file name"
+              placeholder="Enter name"
               required
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary text-black dark:text-white text-sm"
             />
@@ -108,8 +110,8 @@ const EditEmployeeModal = ({ onClose, emp }) => {
               id="salary"
               type="number"
               value={salary}
-              onChange={(e) => setSalary(e.target.value)}
-              placeholder="Enter file name"
+              onChange={(e) => setSalary(Number(e.target.value))}
+              placeholder="Enter salary"
               required
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary text-black dark:text-white text-sm"
             />

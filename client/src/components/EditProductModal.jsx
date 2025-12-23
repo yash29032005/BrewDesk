@@ -3,10 +3,10 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 
 const EditProductModal = ({ onClose, item, setProducts }) => {
-  const id = item.id;
-  const [name, setName] = useState(item.name);
-  const [category, setCategory] = useState(item.category);
-  const [price, setPrice] = useState(item.price);
+  const id = item.product_id;
+  const [name, setName] = useState(item.product_name);
+  const [category, setCategory] = useState(item.product_category);
+  const [price, setPrice] = useState(item.product_price);
 
   const handleEdit = async () => {
     try {
@@ -25,11 +25,10 @@ const EditProductModal = ({ onClose, item, setProducts }) => {
       setCategory("");
       setPrice("");
       toast.success(result.data.message);
+      const updatedProduct = result.data.product;
 
       setProducts((prevProducts) =>
-        prevProducts.map((p) =>
-          p.id === id ? { ...p, name, category, price } : p
-        )
+        prevProducts.map((p) => (p.product_id === id ? updatedProduct : p))
       );
       onClose();
     } catch (error) {
