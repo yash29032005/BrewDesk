@@ -25,10 +25,12 @@ const AdminDashboard = () => {
   const { ordersMap, totalOrder, totalRevenue, allOrders } =
     useContext(OrderContext);
 
-  const employeeOrdersData = employees.map((emp) => ({
-    name: emp.emp_name,
-    value: ordersMap[emp.emp_id] ?? 0,
-  }));
+  const employeeOrdersData = employees
+    .map((emp) => ({
+      name: emp.emp_name,
+      value: Number(ordersMap[emp.emp_id]) || 0,
+    }))
+    .filter((item) => item.value > 0);
 
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff6f61", "#00c49f"];
 
@@ -103,18 +105,16 @@ const AdminDashboard = () => {
             </div>
             <div className="w-full h-full">
               <ResponsiveContainer>
-                <BarChart
-                  data={products} // extra space for labels
-                >
+                <BarChart data={products}>
                   <CartesianGrid strokeDasharray="3 3" />
+
                   <XAxis
-                    dataKey="name"
-                    tick={{
-                      fontSize: 12,
-                      fill: "#fff",
-                    }}
+                    dataKey="product_name"
+                    tick={{ fontSize: 12, fill: "#fff" }}
                   />
+
                   <YAxis tick={{ fontSize: 12, fill: "#fff" }} />
+
                   <Tooltip
                     labelStyle={{ color: "#000" }}
                     contentStyle={{
@@ -122,11 +122,12 @@ const AdminDashboard = () => {
                       borderRadius: "6px",
                     }}
                   />
-                  <Bar dataKey="stock">
-                    {products.map((pro) => (
+
+                  <Bar dataKey="product_stock">
+                    {products.map((pro, index) => (
                       <Cell
-                        key={pro.id}
-                        fill={pro.stock <= 5 ? "#ef4444" : "#22c55e"}
+                        key={index}
+                        fill={pro.product_stock <= 5 ? "#ef4444" : "#22c55e"}
                       />
                     ))}
                   </Bar>
@@ -193,9 +194,9 @@ const AdminDashboard = () => {
               </p>
             ) : (
               <div className="flex flex-col gap-5">
-                {allOrders.map((order) => (
+                {allOrders.map((order, index) => (
                   <div
-                    key={order.orderId}
+                    key={index}
                     className="rounded-lg p-4 bg-gradient-to-b from-lightternary to-lightprimary
           dark:bg-gradient-to-b dark:from-darkternary dark:to-darkprimary shadow-md"
                   >
@@ -270,8 +271,9 @@ const AdminDashboard = () => {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  fill="#8884d8"
-                  label
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {employeeOrdersData.map((_, index) => (
                     <Cell

@@ -62,7 +62,7 @@ const RequestStockModal = ({ onClose, product }) => {
               className="w-full p-2 rounded-lg bg-lightsecondary dark:bg-darksecondary 
                text-black dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
             >
-              {product.name}
+              {product.product_name}
             </p>
           </div>
           <div className="mt-5 text-lightgrey dark:text-darkgrey flex flex-col">

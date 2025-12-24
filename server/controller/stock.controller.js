@@ -6,7 +6,7 @@ exports.createRequest = async (req, res) => {
     const { productId, employeeId, quantity } = req.body;
 
     await sql`
-      INSERT INTO stock_requests (product_id, employee_id, quantity)
+      INSERT INTO stock_requests (product_id, employee_id, stock_quantity)
       VALUES (${productId}, ${employeeId}, ${quantity})
     `;
 

@@ -16,7 +16,9 @@ const PointOfSale = () => {
   useEffect(() => {
     setCart((prevCart) =>
       prevCart.filter((item) =>
-        products.find((p) => p.id === item.id && p.enabled)
+        products.find(
+          (p) => p.product_id === item.product_id && p.product_enabled
+        )
       )
     );
   }, [products]);
@@ -31,31 +33,35 @@ const PointOfSale = () => {
 
   // Add product to cart
   const addToCart = (product) => {
-    if (!product.enabled) {
+    if (!product.product_enabled) {
       toast.warn("This product is disabled");
       return;
     }
 
-    if (product.stock <= 0) {
+    if (product.product_stock <= 0) {
       toast.warn("This item is out of stock");
       return;
     }
 
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find(
+        (item) => item.product_id === product.product_id
+      );
       if (existing) {
         return prevCart.map((item) =>
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
+          item.product_id === product.product_id
+            ? { ...item, product_qty: item.product_qty + 1 }
+            : item
         );
       } else {
         return [
           ...prevCart,
           {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            qty: 1,
-            enabled: product.enabled,
+            product_id: product.product_id,
+            product_name: product.product_name,
+            product_price: product.product_price,
+            product_qty: 1,
+            product_enabled: product.product_enabled,
           },
         ];
       }
@@ -64,24 +70,31 @@ const PointOfSale = () => {
     // Reduce stock in products
     setProducts((prevProducts) =>
       prevProducts.map((p) =>
-        p.id === product.id ? { ...p, stock: p.stock - 1 } : p
+        p.product_id === product.product_id
+          ? { ...p, product_stock: p.product_stock - 1 }
+          : p
       )
     );
   };
 
   // Increase quantity
   const increaseQty = (id) => {
-    const product = products.find((p) => p.id === id);
-    if (!product || !product.enabled || product.stock <= 0) return;
+    const product = products.find((p) => p.product_id === id);
+    if (!product || !product.product_enabled || product.product_stock <= 0)
+      return;
 
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === id ? { ...item, qty: item.qty + 1 } : item
+        item.product_id === id
+          ? { ...item, product_qty: item.product_qty + 1 }
+          : item
       )
     );
 
     setProducts((prevProducts) =>
-      prevProducts.map((p) => (p.id === id ? { ...p, stock: p.stock - 1 } : p))
+      prevProducts.map((p) =>
+        p.product_id === id ? { ...p, product_stock: p.product_stock - 1 } : p
+      )
     );
   };
 
@@ -90,24 +103,26 @@ const PointOfSale = () => {
     setCart((prevCart) =>
       prevCart
         .map((item) => {
-          if (item.id === id && item.qty > 0) {
+          if (item.product_id === id && item.product_qty > 0) {
             // Add back stock
             setProducts((prevProducts) =>
               prevProducts.map((p) =>
-                p.id === id ? { ...p, stock: p.stock + 1 } : p
+                p.product_id === id
+                  ? { ...p, product_stock: p.product_stock + 1 }
+                  : p
               )
             );
-            return { ...item, qty: item.qty - 1 };
+            return { ...item, product_qty: item.product_qty - 1 };
           }
           return item;
         })
-        .filter((item) => item.qty > 0)
+        .filter((item) => item.product_qty > 0)
     );
   };
 
   // Calculate total
   const totalPrice = cart.reduce(
-    (total, item) => total + item.price * item.qty,
+    (total, item) => total + item.product_price * item.product_qty,
     0
   );
 
@@ -128,40 +143,42 @@ const PointOfSale = () => {
             <p className="text-black dark:text-white">No products available</p>
           ) : (
             products
-              .filter((item) => item.enabled) // ✅ only enabled products
-              .map((item) => (
+              .filter((item) => item.product_enabled) // ✅ only enabled products
+              .map((item, index) => (
                 <motion.div
-                  key={item.id}
+                  key={index}
                   whileHover={{
-                    scale: item.stock > 0 ? 1.05 : 1,
+                    scale: item.product_stock > 0 ? 1.05 : 1,
                   }}
-                  whileTap={{ scale: item.stock > 0 ? 0.95 : 1 }}
+                  whileTap={{ scale: item.product_stock > 0 ? 0.95 : 1 }}
                   className={`bg-gradient-to-b from-lightternary to-lightprimary 
             dark:from-darkternary dark:to-darkprimary text-white p-5 
             rounded-lg shadow-md flex flex-col justify-between
             min-h-[200px] md:min-h-[300px] transition cursor-pointer
             ${
-              item.stock <= 0
+              item.product_stock <= 0
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:shadow-lg"
             }`}
-                  onClick={() => item.stock > 0 && addToCart(item)}
+                  onClick={() => item.product_stock > 0 && addToCart(item)}
                 >
                   <div className="flex-1 flex flex-col items-center justify-center">
                     <BsCup className="text-4xl text-black dark:text-white" />
                   </div>
                   <div className="mt-3 relative">
                     <p className="font-bold text-lg text-black dark:text-white">
-                      {item.name}
+                      {item.product_name}
                     </p>
                     <p className="text-sm opacity-80 text-lightgrey dark:text-darkgrey">
-                      {item.category}
+                      {item.product_category}
                     </p>
                     <p className="mt-1 font-semibold text-black dark:text-white">
-                      ₹{Number(item.price).toFixed(2)}
+                      ₹{Number(item.product_price).toFixed(2)}
                     </p>
                     <span className="absolute bottom-0 right-0 text-xs bg-lightprimary dark:bg-darkprimary text-black dark:text-white rounded-full px-3 py-1">
-                      {item.stock > 0 ? `Stock: ${item.stock}` : "Out of Stock"}
+                      {item.product_stock > 0
+                        ? `Stock: ${item.product_stock}`
+                        : "Out of Stock"}
                     </span>
                   </div>
                 </motion.div>
@@ -183,12 +200,14 @@ const PointOfSale = () => {
         ) : (
           <div className="flex-1 flex flex-col justify-between mt-3">
             <div className="space-y-3 overflow-y-auto max-h-64 pr-1">
-              {cart.map((item) => {
-                const product = products.find((p) => p.id === item.id);
-                const isEnabled = product ? product.enabled : true;
+              {cart.map((item, index) => {
+                const product = products.find(
+                  (p) => p.product_id === item.product_id
+                );
+                const isEnabled = product ? product.product_enabled : true;
                 return (
                   <div
-                    key={item.id}
+                    key={index}
                     className="flex justify-between items-center bg-lightprimary dark:bg-darkprimary 
                     rounded-lg p-3 shadow-sm"
                   >
@@ -196,30 +215,30 @@ const PointOfSale = () => {
                       <>
                         <div>
                           <p className="font-medium text-black dark:text-white">
-                            {item.name}
+                            {item.product_name}
                           </p>
                           <p className="text-sm text-lightgrey dark:text-darkgrey">
-                            ₹{Number(item.price).toFixed(2)}
+                            ₹{Number(item.product_price).toFixed(2)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => decreaseQty(item.id)}
+                            onClick={() => decreaseQty(item.product_id)}
                             className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
                           >
                             -
                           </button>
                           <span className="text-black dark:text-white min-w-[20px] text-center">
-                            {item.qty}
+                            {item.product_qty}
                           </span>
                           <button
-                            onClick={() => increaseQty(item.id)}
+                            onClick={() => increaseQty(item.product_id)}
                             className={`px-2 py-1 rounded-md transition ${
-                              item.qty < product.stock
+                              product.product_stock > 0
                                 ? "bg-green-600 hover:bg-green-700 text-white"
                                 : "bg-gray-400 text-gray-200 cursor-not-allowed"
                             }`}
-                            disabled={item.qty >= product.stock}
+                            disabled={product.product_stock <= 0}
                           >
                             +
                           </button>

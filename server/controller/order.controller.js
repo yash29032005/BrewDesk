@@ -10,47 +10,49 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    const normalizedPaymentMethod = paymentMethod?.toUpperCase();
-
     const total = cart.reduce(
-      (sum, item) => sum + Number(item.price) * Number(item.qty),
+      (sum, item) =>
+        sum + Number(item.product_price) * Number(item.product_qty),
       0
     );
 
     await client`BEGIN`;
 
     const orderResult = await client`
-      INSERT INTO orders (user_id, customer_name, total, payment_method)
-      VALUES (${userId}, ${customerName}, ${total}, ${normalizedPaymentMethod})
-      RETURNING id
+      INSERT INTO orders (user_id, customer_name, order_total, order_payment_method)
+      VALUES (${userId}, ${customerName}, ${total}, ${paymentMethod})
+      RETURNING order_id
     `;
 
-    const orderId = orderResult[0].id;
+    const orderId = orderResult[0].order_id;
 
     for (const item of cart) {
       const productResult = await client`
-        SELECT stock
+        SELECT product_stock
         FROM products
-        WHERE id = ${item.id}
+        WHERE product_id = ${item.product_id}
         FOR UPDATE
       `;
 
-      if (productResult.length === 0 || productResult[0].stock < item.qty) {
+      if (
+        productResult.length === 0 ||
+        productResult[0].product_stock < item.product_qty
+      ) {
         await client`ROLLBACK`;
         return res.status(400).json({
-          message: `Not enough stock for ${item.name}`,
+          message: `Not enough stock for ${item.product_name}`,
         });
       }
 
       await client`
-        INSERT INTO order_items (order_id, product_id, quantity, price)
-        VALUES (${orderId}, ${item.id}, ${item.qty}, ${item.price})
+        INSERT INTO order_items (order_id, product_id, order_items_quantity, order_items_price)
+        VALUES (${orderId}, ${item.product_id}, ${item.product_qty}, ${item.product_price})
       `;
 
       await client`
         UPDATE products
-        SET stock = stock - ${item.qty}
-        WHERE id = ${item.id}
+        SET product_stock = product_stock - ${item.product_qty}
+        WHERE product_id = ${item.product_id}
       `;
     }
 
@@ -71,43 +73,43 @@ exports.createOrder = async (req, res) => {
 
 exports.getOrder = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.emp_id;
 
     const rows = await sql`
-      SELECT 
-        o.id AS orderId,
+      SELECT
+        o.order_id,
         o.user_id,
         o.customer_name,
-        o.total,
+        o.order_total,
         o.created_at,
         oi.product_id,
-        p.name AS productName,
-        oi.quantity,
-        oi.price
-      FROM orders o
-      JOIN order_items oi ON o.id = oi.order_id
-      JOIN products p ON oi.product_id = p.id
+        p.product_name ,
+        oi.order_items_quantity,
+        oi.order_items_price
+      FROM orders AS o
+      JOIN order_items oi ON o.order_id = oi.order_id
+      JOIN products p ON oi.product_id = p.product_id
       WHERE o.user_id = ${userId}
-      ORDER BY o.created_at DESC, oi.id ASC
+      ORDER BY o.created_at DESC, oi.order_items_id ASC
     `;
 
     const ordersMap = {};
     rows.forEach((row) => {
-      if (!ordersMap[row.orderId]) {
-        ordersMap[row.orderId] = {
-          orderId: row.orderId,
+      if (!ordersMap[row.order_id]) {
+        ordersMap[row.order_id] = {
+          orderId: row.order_id,
           userId: row.user_id,
           customerName: row.customer_name,
-          total: row.total,
+          total: row.order_total,
           createdAt: row.created_at,
           items: [],
         };
       }
-      ordersMap[row.orderId].items.push({
+      ordersMap[row.order_id].items.push({
         productId: row.product_id,
-        name: row.productName,
-        quantity: row.quantity,
-        price: row.price,
+        name: row.product_name,
+        quantity: row.order_items_quantity,
+        price: row.order_items_price,
       });
     });
 
@@ -121,49 +123,45 @@ exports.getOrder = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch orders" });
   }
 };
+
 exports.getAllOrders = async (req, res) => {
   try {
-    const rows = await sql`
-        SELECT 
-  o.id AS orderId,
-  o.user_id AS userId,
-  u.name AS userName,
-  o.customer_name AS customerName,
-  o.total,
-  o.payment_method AS paymentMethod,
-  o.created_at AS createdAt,
-  oi.product_id AS productId,
-  p.name AS productName,
-  oi.quantity,
-  oi.price
-FROM orders o
-JOIN order_items oi ON o.id = oi.order_id
-JOIN products p ON oi.product_id = p.id
-LEFT JOIN employees u ON o.user_id = u.id
-ORDER BY o.created_at DESC, oi.id ASC
+    const userId = req.user.emp_id;
 
+    const rows = await sql`
+      SELECT
+        o.order_id,
+        o.user_id,
+        o.customer_name,
+        o.order_total,
+        o.created_at,
+        oi.product_id,
+        p.product_name ,
+        oi.order_items_quantity,
+        oi.order_items_price
+      FROM orders AS o
+      JOIN order_items oi ON o.order_id = oi.order_id
+      JOIN products p ON oi.product_id = p.product_id
+      ORDER BY o.created_at DESC, oi.order_items_id ASC
     `;
 
     const ordersMap = {};
     rows.forEach((row) => {
-      if (!ordersMap[row.orderId]) {
-        ordersMap[row.orderId] = {
-          orderId: row.orderId,
-          userId: row.userId,
-          userName: row.userName,
-          customerName: row.customerName,
-          total: row.total,
-          paymentMethod: row.paymentMethod,
-          createdAt: row.createdAt,
+      if (!ordersMap[row.order_id]) {
+        ordersMap[row.order_id] = {
+          orderId: row.order_id,
+          userId: row.user_id,
+          customerName: row.customer_name,
+          total: row.order_total,
+          createdAt: row.created_at,
           items: [],
         };
       }
-
-      ordersMap[row.orderId].items.push({
-        productId: row.productId,
-        name: row.productName,
-        quantity: row.quantity,
-        price: row.price,
+      ordersMap[row.order_id].items.push({
+        productId: row.product_id,
+        name: row.product_name,
+        quantity: row.order_items_quantity,
+        price: row.order_items_price,
       });
     });
 
@@ -181,18 +179,18 @@ ORDER BY o.created_at DESC, oi.id ASC
 exports.getOrdersSummary = async (req, res) => {
   try {
     const ordersByUser = await sql`
-      SELECT user_id, COUNT(id) AS total
+      SELECT user_id, COUNT(order_id) AS total
       FROM orders
       GROUP BY user_id
     `;
 
     const totalOrders = await sql`
-      SELECT COUNT(id) AS total
+      SELECT COUNT(order_id) AS total
       FROM orders
     `;
 
     const totalRevenue = await sql`
-      SELECT SUM(total) AS total
+      SELECT SUM(order_total) AS total
       FROM orders
     `;
 

@@ -30,7 +30,7 @@ export const OrderProvider = ({ children }) => {
       }
     };
 
-    if (user?.role === "employee") {
+    if (user?.emp_role === "employee") {
       fetchOrders();
     }
   }, [user]);
@@ -50,7 +50,7 @@ export const OrderProvider = ({ children }) => {
         toast.error(error.response?.data?.message || "Something went wrong");
       }
     };
-    if (user?.role === "admin") {
+    if (user?.emp_role === "admin") {
       fetchAllOrders();
     }
   }, [user]);
@@ -74,10 +74,10 @@ export const OrderProvider = ({ children }) => {
       }
     };
 
-    if (user?.role === "manager" || user?.role === "admin") {
+    if (user?.emp_role === "manager" || user?.emp_role === "admin") {
       fetchOrdersSummary();
     }
-  }, [setOrdersMap, user?.role]);
+  }, [setOrdersMap, user?.emp_role]);
 
   return (
     <OrderContext.Provider

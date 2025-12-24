@@ -23,10 +23,12 @@ const ManagerDashboard = () => {
   const { employees, totalEmployees } = useContext(UserContext);
   const { ordersMap, totalOrder } = useContext(OrderContext);
 
-  const employeeOrdersData = employees.map((emp) => ({
-    name: emp.name,
-    value: ordersMap[emp.id] ?? 0,
-  }));
+  const employeeOrdersData = employees
+    .map((emp) => ({
+      name: emp.emp_name,
+      value: Number(ordersMap[emp.emp_id]) || 0,
+    }))
+    .filter((item) => item.value > 0);
 
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff6f61", "#00c49f"];
 
@@ -101,18 +103,16 @@ const ManagerDashboard = () => {
             </div>
             <div className="w-full h-full">
               <ResponsiveContainer>
-                <BarChart
-                  data={products} // extra space for labels
-                >
+                <BarChart data={products}>
                   <CartesianGrid strokeDasharray="3 3" />
+
                   <XAxis
-                    dataKey="name"
-                    tick={{
-                      fontSize: 12,
-                      fill: "#fff",
-                    }}
+                    dataKey="product_name"
+                    tick={{ fontSize: 12, fill: "#fff" }}
                   />
+
                   <YAxis tick={{ fontSize: 12, fill: "#fff" }} />
+
                   <Tooltip
                     labelStyle={{ color: "#000" }}
                     contentStyle={{
@@ -120,11 +120,12 @@ const ManagerDashboard = () => {
                       borderRadius: "6px",
                     }}
                   />
-                  <Bar dataKey="stock">
-                    {products.map((pro) => (
+
+                  <Bar dataKey="product_stock">
+                    {products.map((pro, index) => (
                       <Cell
-                        key={pro.id}
-                        fill={pro.stock <= 5 ? "#ef4444" : "#22c55e"}
+                        key={index}
+                        fill={pro.product_stock <= 5 ? "#ef4444" : "#22c55e"}
                       />
                     ))}
                   </Bar>
@@ -152,8 +153,9 @@ const ManagerDashboard = () => {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  fill="#8884d8"
-                  label
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {employeeOrdersData.map((_, index) => (
                     <Cell

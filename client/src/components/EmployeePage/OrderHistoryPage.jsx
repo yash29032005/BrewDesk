@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const OrderHistoryPage = () => {
   const { orders, loading } = useContext(OrderContext);
-
+  console.log(orders);
   const generateReceipt = async (order) => {
     if (!order || !Array.isArray(order.items)) {
       console.error("Invalid order object:", order);

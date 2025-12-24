@@ -69,7 +69,7 @@ function App() {
         {/* Catch all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <ToastContainer />
+      <ToastContainer position="top-center" />
     </>
   );
 }

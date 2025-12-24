@@ -2,9 +2,7 @@ import React, { useContext, useState } from "react";
 
 import { CiShoppingCart } from "react-icons/ci";
 import { BsCup } from "react-icons/bs";
-import { FaMinus } from "react-icons/fa";
 import RequestStockModal from "./RequestStockModal";
-import RemoveProductModal from "../RemoveProductModal";
 import EditProductModal from "../EditProductModal";
 import { ProductContext } from "../../context/ProductContext";
 
@@ -46,10 +44,10 @@ const InventoryManagement = () => {
           {/* Product Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products
-              .filter((item) => item.enabled)
-              .map((item) => (
+              .filter((item) => item.product_enabled)
+              .map((item, index) => (
                 <div
-                  key={item.id}
+                  key={index}
                   className="bg-gradient-to-b from-lightternary to-lightprimary
         dark:bg-gradient-to-b dark:from-darkternary dark:to-darkprimary 
         text-white p-5 rounded-lg shadow-md flex flex-col justify-between
@@ -61,19 +59,19 @@ const InventoryManagement = () => {
 
                   <div className="mt-3 relative">
                     <p className="font-bold text-lg text-black dark:text-white">
-                      {item.name}
+                      {item.product_name}
                     </p>
                     <p className="text-sm opacity-80 text-lightgrey dark:text-darkgrey">
-                      {item.category}
+                      {item.product_category}
                     </p>
                     <p className="mt-1 font-semibold text-black dark:text-white">
-                      ₹{item.price.toFixed(2)}
+                      ₹{item.product_price.toFixed(2)}
                     </p>
                     <span
                       className="absolute bottom-0 right-0 text-xs bg-lightprimary dark:bg-darkprimary 
             text-black dark:text-white rounded-full px-3 py-1"
                     >
-                      Stock: {item.stock}
+                      Stock: {item.product_stock}
                     </span>
 
                     {/* Edit Button */}

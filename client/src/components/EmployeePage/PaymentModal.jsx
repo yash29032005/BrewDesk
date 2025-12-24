@@ -14,7 +14,7 @@ const PaymentModal = ({ onClose, cart, setCart }) => {
       const result = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/order/create`,
         {
-          userId: user.id,
+          userId: user.emp_id,
           customerName,
           cart,
           paymentMethod,
@@ -70,7 +70,7 @@ const PaymentModal = ({ onClose, cart, setCart }) => {
         },
         prefill: {
           name: customerName,
-          email: user.email,
+          email: user.emp_email,
         },
         theme: {
           color: "#2563eb",
@@ -87,7 +87,10 @@ const PaymentModal = ({ onClose, cart, setCart }) => {
 
   // ✅ Calculate total amount
   const calculateTotal = () => {
-    return cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+    return cart.reduce(
+      (acc, item) => acc + item.product_price * item.product_qty,
+      0
+    );
   };
 
   // ✅ Main Order button
