@@ -12,49 +12,17 @@
   --color-darkternary: #3c2a21;
   --color-darkgrey: #bbbbbb;
 }
-
-html {
-  scroll-behavior: smooth;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-/* Default (light theme) */
+/* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
-  width: 8px;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--color-lightprimary);
+/* Firefox */
+html {
+  scrollbar-width: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-lightsecondary);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-lightternary);
-}
-
-/* Dark theme */
-.dark :where(::-webkit-scrollbar-track) {
-  background: var(--color-darkprimary);
-}
-
-.dark :where(::-webkit-scrollbar-thumb) {
-  background: var(--color-darksecondary);
-}
-
-.dark :where(::-webkit-scrollbar-thumb:hover) {
-  background: var(--color-darkternary);
-}
-
-/* For Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-lightsecondary) var(--color-lightprimary);
-}
-
-.dark * {
-  scrollbar-color: var(--color-darksecondary) var(--color-darkprimary);
+/* IE / old Edge */
+body {
+  -ms-overflow-style: none;
 }
