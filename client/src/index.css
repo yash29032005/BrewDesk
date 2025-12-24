@@ -12,6 +12,7 @@
   --color-darkternary: #3c2a21;
   --color-darkgrey: #bbbbbb;
 }
+
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
   display: none;
